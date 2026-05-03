@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
-import Navigation from "@/components/Navigation";
+import Sidebar from "@/components/Sidebar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -13,11 +13,50 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
+/**
+ * Advanced SEO metadata for ElectoGuide.
+ * Includes OpenGraph tags, Twitter Cards, and keywords for maximum SEO score.
+ */
 export const metadata: Metadata = {
-  title: "ElectoGuide | Interactive Election Guide",
-  description: "An interactive educational platform simplifying the election process.",
+  title: "ElectoGuide | Interactive AI-Powered Election Guide",
+  description:
+    "An interactive educational platform simplifying the US election process with AI-powered guidance, interactive flashcards, and a visual voting timeline.",
+  keywords: [
+    "election guide",
+    "voting",
+    "AI assistant",
+    "electoral college",
+    "US elections",
+    "voter registration",
+    "civic education",
+  ],
+  authors: [{ name: "ElectoGuide Team" }],
+  openGraph: {
+    title: "ElectoGuide | Interactive AI-Powered Election Guide",
+    description:
+      "Navigate the election process with confidence using our AI assistant, interactive flashcards, and visual timeline.",
+    type: "website",
+    locale: "en_US",
+    siteName: "ElectoGuide",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ElectoGuide | AI-Powered Election Guide",
+    description:
+      "Navigate the election process with confidence using our AI assistant and interactive learning tools.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
+/**
+ * Root Layout Component
+ * Renders the global dashboard layout with a persistent Sidebar and a scrollable content area.
+ * @param {object} props - The layout props containing children pages.
+ * @returns {JSX.Element} The root HTML layout.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -26,9 +65,14 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${outfit.variable}`}>
       <body>
-        <Navigation />
-        <main>{children}</main>
+        <div className="dashboard-layout">
+          <Sidebar />
+          <div className="dashboard-content" role="main">
+            {children}
+          </div>
+        </div>
       </body>
     </html>
   );
 }
+

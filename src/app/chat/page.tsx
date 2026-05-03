@@ -119,7 +119,7 @@ export default function Chat() {
         </div>
 
         <form className={styles.inputArea} onSubmit={handleSubmit} aria-label="Message Input Form">
-          <label htmlFor="chat-input" className="sr-only" style={{display: 'none'}}>Type your question</label>
+          <label htmlFor="chat-input" className="sr-only">Type your question</label>
           <input 
             id="chat-input"
             type="text" 
