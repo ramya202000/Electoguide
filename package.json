@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint",
+    "test": "jest"
   },
   "dependencies": {
     "next": "16.2.4",
@@ -14,11 +15,22 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@google/genai": "^1.51.0",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/dompurify": "^3.0.5",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dompurify": "^3.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "jest": "^30.3.0",
+    "jest-environment-jsdom": "^30.3.0",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

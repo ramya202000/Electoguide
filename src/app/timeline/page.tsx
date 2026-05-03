@@ -5,7 +5,18 @@ export const metadata = {
   description: 'Your step-by-step guide to the voting process.',
 };
 
-const steps = [
+/**
+ * Interface representing a single step in the voting timeline.
+ */
+interface TimelineStep {
+  id: number;
+  title: string;
+  date: string;
+  description: string;
+  icon: string;
+}
+
+const steps: TimelineStep[] = [
   {
     id: 1,
     title: 'Register to Vote',
@@ -36,33 +47,39 @@ const steps = [
   },
 ];
 
+/**
+ * Timeline Page Component
+ * Visualizes the voting process as a vertical timeline.
+ * Built with semantic HTML for high accessibility and SEO scores.
+ * @returns {JSX.Element} The rendered Timeline page.
+ */
 export default function Timeline() {
   return (
-    <div className={styles.container}>
+    <main className={styles.container}>
       <header className={styles.header}>
         <h1 className={styles.title}>Your Voting <span className="text-gradient">Timeline</span></h1>
         <p className={styles.subtitle}>Follow these essential steps to ensure your voice is heard in the upcoming election.</p>
       </header>
 
-      <div className={styles.timeline}>
+      <section className={styles.timeline} aria-label="Voting Process Steps">
         {steps.map((step, index) => (
-          <div key={step.id} className={styles.step}>
-            <div className={styles.connector}>
+          <article key={step.id} className={styles.step} aria-labelledby={`step-title-${step.id}`}>
+            <div className={styles.connector} aria-hidden="true">
               <div className={styles.node}>{step.id}</div>
               {index !== steps.length - 1 && <div className={styles.line}></div>}
             </div>
             
             <div className={`glass-panel ${styles.content}`}>
-              <div className={styles.icon}>{step.icon}</div>
+              <div className={styles.icon} aria-hidden="true">{step.icon}</div>
               <div className={styles.details}>
                 <span className={styles.date}>{step.date}</span>
-                <h2 className={styles.stepTitle}>{step.title}</h2>
+                <h2 id={`step-title-${step.id}`} className={styles.stepTitle}>{step.title}</h2>
                 <p className={styles.stepDesc}>{step.description}</p>
               </div>
             </div>
-          </div>
+          </article>
         ))}
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

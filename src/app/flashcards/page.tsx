@@ -1,9 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import styles from './Flashcards.module.css';
 
-const cards = [
+/**
+ * Interface representing a single flashcard's data.
+ */
+interface FlashcardType {
+  id: number;
+  term: string;
+  definition: string;
+}
+
+const cards: FlashcardType[] = [
   {
     id: 1,
     term: 'Electoral College',
@@ -36,42 +45,71 @@ const cards = [
   }
 ];
 
+/**
+ * Flashcards Page Component
+ * Renders an interactive grid of flashcards for educational purposes.
+ * Implements strict accessibility features and semantic HTML.
+ * @returns {JSX.Element} The rendered Flashcards page.
+ */
 export default function Flashcards() {
   const [flippedCards, setFlippedCards] = useState<Record<number, boolean>>({});
 
-  const handleFlip = (id: number) => {
+  /**
+   * Toggles the flipped state of a specific card.
+   * @param {number} id - The unique identifier of the flashcard.
+   */
+  const handleFlip = useCallback((id: number) => {
     setFlippedCards(prev => ({
       ...prev,
       [id]: !prev[id]
     }));
-  };
+  }, []);
+
+  /**
+   * Handles keyboard interactions for accessibility.
+   * Allows users to flip cards using Enter or Space keys.
+   */
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLElement>, id: number) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      handleFlip(id);
+    }
+  }, [handleFlip]);
 
   return (
-    <div className={styles.container}>
+    <main className={styles.container}>
       <header className={styles.header}>
         <h1 className={styles.title}>Electoral <span className="text-gradient">Flashcards</span></h1>
         <p className={styles.subtitle}>Master the terminology. Click on a card to flip it and reveal the definition.</p>
       </header>
 
-      <div className={styles.grid}>
-        {cards.map((card) => (
-          <div 
-            key={card.id} 
-            className={styles.scene}
-            onClick={() => handleFlip(card.id)}
-          >
-            <div className={`${styles.card} ${flippedCards[card.id] ? styles.isFlipped : ''}`}>
-              <div className={`${styles.cardFace} ${styles.cardFront}`}>
-                <h2 className={styles.term}>{card.term}</h2>
-                <div className={styles.flipHint}>Click to flip</div>
+      <section className={styles.grid} aria-label="Flashcards Grid">
+        {cards.map((card) => {
+          const isFlipped = !!flippedCards[card.id];
+          return (
+            <article 
+              key={card.id} 
+              className={styles.scene}
+              onClick={() => handleFlip(card.id)}
+              onKeyDown={(e) => handleKeyDown(e, card.id)}
+              tabIndex={0}
+              role="button"
+              aria-expanded={isFlipped}
+              aria-label={`Flashcard: ${card.term}. ${isFlipped ? card.definition : 'Click or press enter to flip and reveal definition.'}`}
+            >
+              <div className={`${styles.card} ${isFlipped ? styles.isFlipped : ''}`}>
+                <div className={`${styles.cardFace} ${styles.cardFront}`} aria-hidden={isFlipped}>
+                  <h2 className={styles.term}>{card.term}</h2>
+                  <div className={styles.flipHint} aria-hidden="true">Click to flip</div>
+                </div>
+                <div className={`${styles.cardFace} ${styles.cardBack}`} aria-hidden={!isFlipped}>
+                  <p className={styles.definition}>{card.definition}</p>
+                </div>
               </div>
-              <div className={`${styles.cardFace} ${styles.cardBack}`}>
-                <p className={styles.definition}>{card.definition}</p>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+            </article>
+          );
+        })}
+      </section>
+    </main>
   );
 }

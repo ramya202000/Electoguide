@@ -1,92 +1,103 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import styles from './Chat.module.css';
 
-type Message = {
+/**
+ * Interface representing a single chat message.
+ */
+interface Message {
   id: string;
   sender: 'user' | 'ai';
   text: string;
-};
+}
 
-// Simulated knowledge base for the demo
-const getSimulatedResponse = (input: string): string => {
-  const lowercaseInput = input.toLowerCase();
-  
-  if (lowercaseInput.includes('register')) {
-    return 'To register to vote, you can usually do it online, by mail, or in person. You generally need to be a US citizen, meet your state\'s residency requirements, and be 18 years old on or before Election Day. You can check your specific state requirements at vote.gov!';
-  } else if (lowercaseInput.includes('where') || lowercaseInput.includes('polling place') || lowercaseInput.includes('location')) {
-    return 'Your polling place depends on your residential address. You can easily find it by visiting your state\'s election office website or using tools like Vote.org\'s polling place locator.';
-  } else if (lowercaseInput.includes('mail') || lowercaseInput.includes('absentee')) {
-    return 'Mail-in or absentee voting allows you to vote without going to a polling place on Election Day. Each state has different rules—some automatically mail ballots to all registered voters, while others require you to request one with a valid excuse.';
-  } else if (lowercaseInput.includes('id') || lowercaseInput.includes('identification')) {
-    return 'Voter ID laws vary significantly by state. Some require a photo ID (like a driver\'s license), some accept non-photo IDs, and others don\'t require ID at all if you sign an affidavit. I recommend checking your state\'s Secretary of State website to be sure before Election Day.';
-  } else if (lowercaseInput.includes('when') || lowercaseInput.includes('date')) {
-    return 'Federal Election Day is always the Tuesday next after the first Monday in November. However, many states offer early voting options which can start weeks before Election Day!';
-  } else if (lowercaseInput.includes('hello') || lowercaseInput.includes('hi')) {
-    return 'Hello! I am ready to help answer your questions about the election process. What would you like to know?';
-  }
-  
-  return 'That is a great question! For the purpose of this demo, I only have limited responses available (try asking about registering, voting locations, mail-in ballots, or ID requirements). In the full version, I would connect to a real AI service to give you accurate, comprehensive information.';
-};
-
+/**
+ * AI Assistant Chat Page
+ * Provides a real-time chat interface connected to Google Gemini AI.
+ * Implements input sanitization and strict accessibility rules.
+ * @returns {JSX.Element} The rendered Chat page.
+ */
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
       sender: 'ai',
-      text: 'Hello! I am your ElectoGuide AI Assistant. How can I help you navigate the election process today? (Try asking about registering, polling places, or mail-in voting!)',
+      text: 'Hello! I am your ElectoGuide AI Assistant powered by Google Gemini. How can I help you navigate the election process today?',
     }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
+  /**
+   * Automatically scrolls the chat window to the newest message.
+   */
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isTyping]);
+  }, [messages, isTyping, scrollToBottom]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  /**
+   * Handles form submission, sending the message to the AI backend.
+   */
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
+
+    // Sanitize user input to prevent XSS
+    const sanitizedInput = DOMPurify.sanitize(input.trim());
 
     const userMessage: Message = {
       id: Date.now().toString(),
       sender: 'user',
-      text: input,
+      text: sanitizedInput,
     };
 
     setMessages((prev) => [...prev, userMessage]);
-    const currentInput = input;
     setInput('');
     setIsTyping(true);
 
-    // Simulate AI response delay
-    setTimeout(() => {
-      const responseText = getSimulatedResponse(currentInput);
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: sanitizedInput }),
+      });
+
+      const data = await response.json();
+      
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
         sender: 'ai',
-        text: responseText,
+        text: data.response || data.error || 'Sorry, I encountered an error.',
       };
       setMessages((prev) => [...prev, aiResponse]);
+    } catch (error) {
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        sender: 'ai',
+        text: 'Connection failed. Please try again later.',
+      };
+      setMessages((prev) => [...prev, errorResponse]);
+    } finally {
       setIsTyping(false);
-    }, 1200);
+    }
   };
 
   return (
-    <div className={styles.container}>
+    <main className={styles.container}>
       <header className={styles.header}>
         <h1 className={styles.title}>AI <span className="text-gradient">Assistant</span></h1>
         <p className={styles.subtitle}>Ask questions and get instant, non-partisan voting guidance.</p>
       </header>
 
-      <div className={`glass-panel ${styles.chatContainer}`}>
-        <div className={styles.messagesArea}>
+      <section className={`glass-panel ${styles.chatContainer}`} aria-label="Chat Interface">
+        <div className={styles.messagesArea} aria-live="polite" aria-atomic="false">
           {messages.map((msg) => (
             <div 
               key={msg.id} 
@@ -98,7 +109,7 @@ export default function Chat() {
             </div>
           ))}
           {isTyping && (
-            <div className={`${styles.messageWrapper} ${styles.wrapperAi}`}>
+            <div className={`${styles.messageWrapper} ${styles.wrapperAi}`} aria-label="AI is typing...">
               <div className={`${styles.message} ${styles.msgAi} ${styles.typingIndicator}`}>
                 <span></span><span></span><span></span>
               </div>
@@ -107,19 +118,22 @@ export default function Chat() {
           <div ref={messagesEndRef} />
         </div>
 
-        <form className={styles.inputArea} onSubmit={handleSubmit}>
+        <form className={styles.inputArea} onSubmit={handleSubmit} aria-label="Message Input Form">
+          <label htmlFor="chat-input" className="sr-only" style={{display: 'none'}}>Type your question</label>
           <input 
+            id="chat-input"
             type="text" 
             className={styles.input}
             placeholder="Type your question here..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            aria-required="true"
           />
-          <button type="submit" className={styles.sendButton} disabled={!input.trim()}>
+          <button type="submit" className={styles.sendButton} disabled={!input.trim()} aria-label="Send Message">
             Send
           </button>
         </form>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }
